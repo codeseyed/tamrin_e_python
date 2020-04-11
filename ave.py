@@ -8,7 +8,7 @@ import numpy as np
 from random import choice
 
 
-
+# function to make a random n*m matrix  
 def sys_linear(n,m,p):
     A = [0]*p
     for i in range(len(A)):
@@ -17,12 +17,13 @@ def sys_linear(n,m,p):
      
     return B
 
+# function to make a random vector with elements between 0 to 99 
 def const(m):
     b = [0]*m
     for i in range(len(b)):
         b[i] = choice(range(100))
     return b
-
+# function to take a matrix and make the average of elements and write the into a new matrix
 def convrg(big_matrix):
     big_matrix_1 = np.zeros((len(big_matrix), len(big_matrix[0])))
     for i in range(len(big_matrix)):
@@ -57,6 +58,7 @@ def convrg(big_matrix):
 
     return big_matrix_1
 
+# a function to calculate the forbenius norm of a given matrix
 def recurese(big_matrix_1):
     forbenius = 0
     for i in range(len(big_matrix_1)):
@@ -64,7 +66,8 @@ def recurese(big_matrix_1):
             forbenius += (big_matrix_1[i][j])**2
     
     return forbenius
-    
+# finally, this part of code takes the random matrices and vectors as the input
+#of systems of linear equations and combines the resultant vectos into a new matrix     
 iteration = 5
 solution = []
 for i in range(iteration):
@@ -78,7 +81,27 @@ for i in range(len(big_matrix)):
     for j in range(len(big_matrix[0])):
         big_matrix[i][j] = solution[i][j]
 
-
+# this part of the code import big_matrix and at each of iteration campute the absolute difference 
+#between two random elements and set it as convergance criteria
+thresh = 1        
+while thresh > 0.0000001:
+    big_matrix = convrg(big_matrix)
+    inices = []
+    for i in range(len(big_matrix)):
+        for j in range(len(big_matrix[0])):
+            inices.append((i,j))
+            
+    random_index1 = choice(inices) #selecting a random element from big_matrix
+    c = big_matrix[random_index1[0]][random_index1[1]]
+    inices.remove(random_index1)
     
+    random_index2 = choice(inices)
+    d = big_matrix[random_index2[0]][random_index2[1]]
+    
+    thresh = abs(c-d)
+    
+print(big_matrix)
+
+np.savetxt('big_matrix.csv', big_matrix, delimiter=',')
 
 

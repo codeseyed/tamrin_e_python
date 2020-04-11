@@ -68,8 +68,8 @@ def dffer(random_matrix, averaged_matrix):
     difference = np.zeros((len(random_matrix), len(random_matrix[0])))
     for i in range(len(random_matrix)):
         for j in range(len(random_matrix[0])):
-            difference[i][j] = abs(random_matrix[i][j] - averaged_matrix[i][j])
-    return difference
+            difference[i][j] = abs(random_matrix[i][j] - averaged_matrix[i][j]) #difference between first array and avergaed array
+    return difference 
 differ = dffer(random_matrix, averaged_matrix)
 # plot the converged array
 plt.plot(np.arange(1, len(random_matrix[0])+1), random_matrix[0], 'r--')
