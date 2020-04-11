@@ -6,21 +6,18 @@ Created on Tue Mar 31 19:11:54 2020
 @author: gongotar
 """
 import numpy as np
-from random import choice
+import random as rnd
 import matplotlib.pyplot as plt
 
-# generate n * m 2D array with random numbers
+#rnd.seed(1)
+
 def randomarray(n,m):
     array = np.zeros((n,m))
     for i in range(len(array)):
         for j in range(len(array[i])):  
-            array[i][j] = choice(np.arange(0,20, dtype=np.int)) #assignign random number between 0 to 10 to each of matrix elements 
+            array[i][j] = rnd.choice(np.arange(0,20, dtype=np.int)) #assignign random number between 0 to 10 to each of matrix elements 
     return array
-# store it in file
-random_matrix = randomarray(8,8)
-print(random_matrix)
-np.savetxt('random_matrix.csv', random_matrix, delimiter=',', fmt='%d')
-# compute average of each cell with its neighbours until converge
+
 def neigh_average(random_matrix):
     averaged_matrix = np.zeros((len(random_matrix),len(random_matrix[0]))) #producing n*m zero matrix
     for i in range(len(random_matrix)):
@@ -50,29 +47,49 @@ def neigh_average(random_matrix):
                 
     return averaged_matrix
 
-averaged_matrix = neigh_average(random_matrix)
-print(averaged_matrix)
-
-
-while averaged_matrix[0][0] != averaged_matrix[1][1]: #check whether convergance is achived!
-    averaged_matrix = neigh_average(averaged_matrix)
-    
-    
-print(averaged_matrix)           
-    
-# load the first array from file
-B = np.loadtxt('random_matrix.csv', delimiter=',')
-print(B)
-# compute the difference between the first array and converged array
 def dffer(random_matrix, averaged_matrix):
-    difference = np.zeros((len(random_matrix), len(random_matrix[0])))
+    difference = np.zeros(random_matrix.shape)
     for i in range(len(random_matrix)):
         for j in range(len(random_matrix[0])):
             difference[i][j] = abs(random_matrix[i][j] - averaged_matrix[i][j])
     return difference
-differ = dffer(random_matrix, averaged_matrix)
+
+
+# generate n * m 2D array with random numbers
+n = 8
+m = 8
+random_matrix = randomarray(n, m)
+
+# store it in file
+np.savetxt('random_matrix.csv', random_matrix, delimiter=',', fmt='%d')
+
+# compute average of each cell with its neighbours until converge
+matrix_prev = random_matrix
+matrix_next = neigh_average(matrix_prev)
+differ = dffer(matrix_prev, matrix_next)
+while sum(sum(differ)) > n*m: #check whether convergance is achieved!
+    matrix_prev = matrix_next
+    matrix_next = neigh_average(matrix_prev)
+    differ = dffer(matrix_prev, matrix_next)
+
+    
+print(matrix_next)           
+    
+# load the first array from file
+B = np.loadtxt('random_matrix.csv', delimiter=',')
+
+# compute the difference between the first array and converged array
+#differ = random_matrix - averaged_matrix
+#differ = dffer(random_matrix, matrix_next)
+
 # plot the converged array
-plt.plot(np.arange(1, len(random_matrix[0])+1), random_matrix[0], 'r--')
-plt.plot(np.arange(1, len(random_matrix[0])+1), averaged_matrix[0], '--')
-plt.plot(np.arange(1, len(random_matrix[0])+1), differ[0])
-plt.show()
+x = range(n)
+y = range(m)
+X, Y = np.meshgrid(x, y)
+ax = plt.axes(projection='3d')
+
+ax.plot_surface(X, Y, differ)
+
+ax.set_xlabel('X Label')
+ax.set_ylabel('Y Label')
+ax.set_zlabel('Z Label')
