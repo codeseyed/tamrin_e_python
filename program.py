@@ -8,11 +8,12 @@ Created on Tue Mar 31 19:11:54 2020
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+import time
 
 
 def generatearray(n,m):
-    h= 1
-    vector = np.arange(m*n, step=h, dtype=np.float)
+    h= 3
+    vector = np.arange(m*n*h, step=h, dtype=np.float)
     random_matrix = np.reshape(vector, (n,m))
     return random_matrix
 
@@ -52,11 +53,13 @@ def dffer(init_matrix, averaged_matrix):
             difference[i][j] = abs(init_matrix[i][j] - averaged_matrix[i][j])
     return difference
 
-
+# set a timer to measure the speed of the program
+start_time = time.time()
 # generate n * m 2D array with random numbers
 n = 50
 m = 50
 init_matrix = generatearray(n, m)
+print(init_matrix)
 
 # store it in file
 np.savetxt('init_matrix.csv', init_matrix, delimiter=',', fmt='%d')
@@ -65,7 +68,9 @@ np.savetxt('init_matrix.csv', init_matrix, delimiter=',', fmt='%d')
 matrix_prev = init_matrix
 matrix_next = neigh_average(matrix_prev)
 differ = dffer(matrix_prev, matrix_next)
-while sum(sum(differ)) > 1: #check whether convergance is achieved!
+thresh = 0.00000001
+while sum(sum(differ)) > thresh: #check whether convergance is achieved!
+
     matrix_prev = matrix_next
     matrix_next = neigh_average(matrix_prev)
     differ = dffer(matrix_prev, matrix_next)
@@ -83,7 +88,7 @@ B = np.loadtxt('random_matrix.csv', delimiter=',')
 
 # plot the converged array
 print(differ)
-differ = dffer(init_matrix, matrix_next)
+#differ = dffer(init_matrix, matrix_next)
 
 x = range(m)
 y = range(n)
@@ -96,7 +101,9 @@ ax.plot_surface(X, Y, differ)
 #ax.plot_surface(X, Y, init_matrix)
 
 
-ax.view_init(60,35)
+#ax.view_init(60,35)
 ax.set_xlabel('X Label')
 ax.set_ylabel('Y Label')
 ax.set_zlabel('Z Label')
+# printing the time consumed by the program
+print("--- %s seconds ---" % (time.time() - start_time))
