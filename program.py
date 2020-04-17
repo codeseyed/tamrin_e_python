@@ -12,7 +12,7 @@ import time
 
 
 def generatearray(n,m):
-    h= 3
+    h= 1
     vector = np.arange(m*n*h, step=h, dtype=np.float)
     random_matrix = np.reshape(vector, (n,m))
     return random_matrix
@@ -56,8 +56,8 @@ def dffer(init_matrix, averaged_matrix):
 # set a timer to measure the speed of the program
 start_time = time.time()
 # generate n * m 2D array with random numbers
-n = 50
-m = 50
+n = 4
+m = 4
 init_matrix = generatearray(n, m)
 print(init_matrix)
 
@@ -67,16 +67,17 @@ np.savetxt('init_matrix.csv', init_matrix, delimiter=',', fmt='%d')
 # compute average of each cell with its neighbours until converge
 matrix_prev = init_matrix
 matrix_next = neigh_average(matrix_prev)
+print(matrix_next)
 differ = dffer(matrix_prev, matrix_next)
-thresh = 0.00000001
+thresh = 0.01
 while sum(sum(differ)) > thresh: #check whether convergance is achieved!
 
     matrix_prev = matrix_next
     matrix_next = neigh_average(matrix_prev)
     differ = dffer(matrix_prev, matrix_next)
-print(sum(sum(differ)))
+    print(differ)
  
-print(matrix_next)           
+    print(matrix_next)           
     
 # load the first array from file
 B = np.loadtxt('random_matrix.csv', delimiter=',')
