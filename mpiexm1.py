@@ -15,27 +15,28 @@ rank = comm.Get_rank()
 def arraygen(array):
     return [i*(rank+5) for i in array] 
 
-# generating an array between 1 to 10
-array = np.arange(1, 10, step=1, dtype=np.int)
 
-# modifying the array based on the rank
-array_new = arraygen(array)
-array_newer = arraygen(array)
+
+
 
 # distributign the process
 if rank == 0:
-    comm.send(array, dest=1, tag=1)
-    comm.send(array_new, dest=1, tag=3)
-    array_newer = comm.recv(source=1, tag=2)
+    data1 = np.arange(1, 10, step=1, dtype=np.int)
+    comm.send(data1, dest=1, tag=1)
+    data2_0 = arraygen(data1)
+    comm.send(data2_0, dest=1, tag=2)
+    data2_1 = comm.recv(source=1, tag=3)
+    
     
     
     
 elif rank == 1:
-    array = comm.recv(source=0, tag=1)
-    array_new = comm.recv(source=0, tag=3) 
-    comm.send(array_newer, dest=0, tag=2)
+    data1 = comm.recv(source=0, tag=1)
+    data2_1 = arraygen(data1)
+    data2_0 = comm.recv(source=0, tag=2)
+    comm.send(data2_1, dest=0, tag=3)
 
-print(rank, array, array_new, array_newer)
+print(rank, data1, data2_0, data2_1)
   
 
 
