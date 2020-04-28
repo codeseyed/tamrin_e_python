@@ -20,6 +20,8 @@ if rank == 0:
     for i in range(size):
         samp_arr = np.full(10, i, dtype=int)
         group_of_arr.append(samp_arr)
+else:
+    group_of_arr = None
 
 # distributing data to all ranks
 our_array = comm.scatter(group_of_arr, root=0)
