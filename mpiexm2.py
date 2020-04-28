@@ -20,6 +20,11 @@ if rank == 0:
     for i in range(size):
         samp_arr = np.full(10, i, dtype=int)
         group_of_arr.append(samp_arr)
+    
+else:
+    group_of_arr = None
+
+print(rank, group_of_arr)
 
 # distributing data to all ranks
 our_array = comm.scatter(group_of_arr, root=0)
@@ -43,10 +48,14 @@ else:
     ave_arr = (our_array + prev_arr)/2
 
 print(rank, ave_arr)    
-#average = comm.allgather(ave_arr)
+average = comm.reduce(ave_arr, root=0)
 #average = comm.gather(ave_arr, root=0)
+# broadcats average to all ranks
+print(rank, average)
+average = comm.bcast(average, root=0)
 
-#print(average)
+
+print(rank, average)
     #ave_average = sum(average)/len(average)
     #print(ave_average)
     
