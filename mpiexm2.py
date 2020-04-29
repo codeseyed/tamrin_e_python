@@ -20,6 +20,9 @@ if rank == 0:
     for i in range(size):
         samp_arr = np.full(10, i, dtype=int)
         group_of_arr.append(samp_arr)
+#    group_of_arr = np.empty(10*size, dtype = int)
+#    for i in range(10*size):
+#        group_of_arr[i] = i/10
     
 else:
     group_of_arr = None
