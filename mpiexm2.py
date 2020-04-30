@@ -18,7 +18,7 @@ size = comm.Get_size()
 if rank == 0:
     group_of_arr = np.empty((size, 10), dtype='i')
     group_of_arr.T[:,:] = range(size)
-    
+ 
 else:
     group_of_arr = None
 
