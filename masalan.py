@@ -39,11 +39,14 @@ comm.Reduce_scatter(array,recvdata_new, recvcounts, op=MPI.MAX)
 
 
 # eventually a bunch of point-to-point comm
+
 if rank == 0:
-    recvbuff = comm.sendrecv(recvdata_new, dest=1, sendtag=0, source=1, recvtag=1)
+    recvbuff = np.zeros(2, dtype='i')
+    comm.Sendrecv(recvdata_new, dest=1, sendtag=0, recvbuff, source=1, recvtag=1)
    
 elif rank ==1:
-    recvbuff = comm.sendrecv(recvdata, dest=0, sendtag=1, source=0, recvtag=0)
+    recvbuff = np.zeros(1, dtype='i')
+    comm.sendrecv(recvdata, dest=0, sendtag=1, recvbuff, source=0, recvtag=0)
     
 else:
     recvbuff = None
