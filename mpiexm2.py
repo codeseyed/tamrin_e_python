@@ -14,7 +14,7 @@ comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 size = comm.Get_size()
 
-size_of_array = 10000
+size_of_array = 10**6
 if rank == 0:
     group_of_arr = np.empty((size, size_of_array), dtype='i')
     group_of_arr.T[:,:] = range(size)
@@ -29,26 +29,30 @@ our_array = np.empty(size_of_array, dtype='i')
 # distributing data to all ranks
 comm.Scatter(group_of_arr, our_array, root=0)
 
+#defining buffers
+nest_arr = np.empty(size_of_array, dtype='i')
+prev_arr = np.empty(size_of_array, dtype='i')
+
 if rank == 0:
-    comm.Send(our_array, dest=1, tag=1)
-    nest_arr = np.empty(size_of_array, dtype='i')
-    comm.Recv(nest_arr, source=1, tag=0)
+    req0 = comm.Isend(our_array, dest=1, tag=1)
+    req1 = comm.Irecv(nest_arr, source=1, tag=0)
+    MPI.Request.Wait(req1)
     ave_arr = (our_array + nest_arr)/2
        
     
 elif rank < size -1:
-    comm.Send(our_array, dest=rank+1, tag=rank+1)
-    comm.Send(our_array, dest=rank-1, tag=rank-1)
-    nest_arr = np.empty(size_of_array, dtype='i')
-    prev_arr = np.empty(size_of_array, dtype='i')
-    comm.Recv(prev_arr, source=rank-1, tag=rank)
-    comm.Recv(nest_arr, source=rank+1, tag=rank)
+    req1 = comm.Isend(our_array, dest=rank-1, tag=rank-1)
+    req2 = comm.Isend(our_array, dest=rank+1, tag=rank+1)
+    req0 = comm.Irecv(prev_arr, source=rank-1, tag=rank)
+    MPI.Request.Wait(req0)
+    req3 = comm.Irecv(nest_arr, source=rank+1, tag=rank)
+    MPI.Request.Wait(req3)
     ave_arr = (our_array + prev_arr + nest_arr)/3
     
 else:
-    comm.Send(our_array, dest=size-2, tag=rank-1)
-    prev_arr = np.empty(size_of_array, dtype='i')
-    comm.Recv(prev_arr, source=size-2, tag=rank)
+    req3 = comm.Isend(our_array, dest=size-2, tag=rank-1)
+    req2 = comm.Irecv(prev_arr, source=size-2, tag=rank)
+    MPI.Request.Wait(req2)
     ave_arr = (our_array + prev_arr)/2
 
 print(rank, ave_arr)   
