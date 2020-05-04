@@ -36,7 +36,9 @@ prev_arr = np.empty(size_of_array, dtype='i')
 if rank == 0:
     req0 = comm.Isend(our_array, dest=1, tag=1)
     req1 = comm.Irecv(nest_arr, source=1, tag=0)
-    MPI.Request.Wait(req1)
+#    MPI.Request.Wait(req1)
+    req1.wait()
+    req0.wait();
     ave_arr = (our_array + nest_arr)/2
        
     
