@@ -47,14 +47,19 @@ if rank == 0:
     data = np.full(4,1, dtype='i')
     print('before process data is equal to :', data)
     req = comm.Isend(data, dest=1, tag=11)
+    req.wait()
     
     
     
     
 elif rank == 1:
     req = comm.Irecv(data, source=0, tag=11)
-    MPI.Request.Test(req)
-    print('after process data is equal to :', data)
+    
+    A = MPI.Request.Test(req)
+    print('before starting the loop:', data, A)
+    while A == False:
+        A = MPI.Request.Test(req)
+    print('after process data is equal to :', data, A)
     
 
 
