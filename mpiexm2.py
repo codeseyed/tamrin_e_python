@@ -35,36 +35,33 @@ prev_arr = np.empty(size_of_array, dtype='i')
 
 if rank == 0:
     req0 = comm.Isend(our_array, dest=1, tag=1)
-    req1 = comm.Irecv(nest_arr, source=1, tag=0)
-#    MPI.Request.Wait(req1)
-    
-    
-    req1.wait()
     req0.wait();
+
+    req1 = comm.Irecv(nest_arr, source=1, tag=0)
+    req1.wait()
+
     ave_arr = (our_array + nest_arr)/2
        
-    
 elif rank < size -1:
     req1 = comm.Isend(our_array, dest=rank-1, tag=rank-1)
     req2 = comm.Isend(our_array, dest=rank+1, tag=rank+1)
-    req0 = comm.Irecv(prev_arr, source=rank-1, tag=rank)
-    req3 = comm.Irecv(nest_arr, source=rank+1, tag=rank)
-    
-    
-    req0.wait()
-    req3.wait()
     req1.wait()
     req2.wait()
+
+    req0 = comm.Irecv(prev_arr, source=rank-1, tag=rank)
+    req3 = comm.Irecv(nest_arr, source=rank+1, tag=rank)
+    req0.wait()
+    req3.wait()
     
     ave_arr = (our_array + prev_arr + nest_arr)/3
     
 else:
     req3 = comm.Isend(our_array, dest=size-2, tag=rank-1)
-    req2 = comm.Irecv(prev_arr, source=size-2, tag=rank)
-    
-    
-    req2.wait()
     req3.wait()
+
+    req2 = comm.Irecv(prev_arr, source=size-2, tag=rank)
+    req2.wait()
+
     ave_arr = (our_array + prev_arr)/2
 
 print(rank, ave_arr)   
