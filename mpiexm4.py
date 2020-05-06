@@ -9,6 +9,7 @@ Created on Tue May  5 22:34:42 2020
 from mpi4py import MPI
 import numpy as np
 from random import randint
+from math import floor
 
 
 comm = MPI.COMM_WORLD
@@ -26,17 +27,9 @@ else:
 
 random_int = comm.bcast(random_int, root=0)
 
-refer_array = np.repeat(np.arange(size, dtype='i'), random_int)
+# modifiying the integer based on its rank
+modified_int = [floor(rank/random_int)]
+print('modified integer for rank:', rank, 'is equal to:', modified_int)
 
-modified_int = [refer_array[rank]]
-
-print(rank, modified_int)
-
-# gather integers of each rank into a vector
-group_int = comm.gather(modified_int, root=0)
-
-
-# store it in a file
-if rank ==0:
-    np.savetxt('group.csv', group_int, delimiter=',', fmt='%d')
-    
+# saving the generated data in a file
+np.savetxt('data_'+ str(rank)+ '.txt', modified_int, fmt='%d')    
