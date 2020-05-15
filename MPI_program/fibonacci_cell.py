@@ -63,14 +63,13 @@ if rank % n == 0 and rank != 0:
     
 elif (rank+1) % n ==0 and rank != m*n-1:
     neighbors.remove(neighbors[1])
-else:
-    None
+
     
         
     
 
     
-#print(rank, neighbors)
+
     
 ndata = np.zeros(len(neighbors))
 
@@ -78,10 +77,11 @@ thres = 0.1
 diff = 2.0
 
 while (diff > thres):
-
+# communication    
   for i,nr in enumerate(neighbors):
     ndata[i] = comm.sendrecv(cell_value, dest=nr, sendtag=rank+nr, source=nr, recvtag=rank+nr)
   
+# computation
   new_cell_value = (sum(ndata)+cell_value)/(len(ndata)+1)
   my_diff = abs(cell_value - new_cell_value)
   diff = comm.allreduce(my_diff, op = MPI.SUM)
