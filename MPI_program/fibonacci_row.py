@@ -43,6 +43,7 @@ if rank == 0:
     inital_matrix = generatearray(m,n)
     
     
+    
      
 else:
     inital_matrix = None
@@ -51,63 +52,79 @@ else:
 row_values = comm.scatter(inital_matrix, root=0)
 
 
+# defining neighbors
+nbrs = [rank-1, rank+1]
+nbrs = [i for i in nbrs if i >=0 and i < m]
+rows = np.zeros((len(nbrs)+1, len(row_values)), dtype=float)
 
 
-thres = 0.1
+
+thres = 0.00001
 diff = 2.0
 while diff > thres:
     
 
+
+    
+
 # communications
-    if rank == 0:
-        nest_row = comm.sendrecv(row_values, dest=rank+1, sendtag=rank, source=rank+1, recvtag=rank+1)
+    rows[0] = row_values
+    
+    for i,j in enumerate(nbrs):
+        rows[i+1] = comm.sendrecv(row_values, dest=j, sendtag=rank+j, source=j, recvtag=rank+j)
+    
         
         
-    elif rank < m-1:
-        pre_row = comm.sendrecv(row_values, dest=rank-1, sendtag=rank, source=rank-1, recvtag=rank-1)
-        nest_row = comm.sendrecv(row_values, dest=rank+1, sendtag=rank, source=rank+1, recvtag=rank+1)
-        
-    else:
-        pre_row = comm.sendrecv(row_values, dest=rank-1, sendtag=rank, source=rank-1, recvtag=rank-1)
+   
         
         
 
     
 # computations 
     new_row = np.zeros(len(row_values), dtype=float)
-
-    for i in range(len(new_row)):
-        if i ==0:
-            num = row_values[i] + row_values[i+1] 
-            count = 2
-        elif i < len(new_row)-1:
-            num = row_values[i-1] + row_values[i] + row_values[i+1]
-            count = 3
-        else:
-            num = row_values[i] + row_values[i-1]
-            count = 2
-        new_row[i] = num/count   
-    
-    if rank == 0:
-        final_row = (new_row + nest_row)/2
-    elif rank < m-1:
-        final_row = (new_row + nest_row + pre_row)/3
+    if rank == 0 or rank == m-1:
+        for i in range(len(new_row)):
+            if i ==0:
+                num = rows[0][i] + rows[0][i+1] + rows[1][i] 
+                count = 3
+            elif i < len(new_row)-1:
+                num = rows[0][i-1] + rows[0][i] + rows[0][i+1] + rows[1][i]
+                count = 4
+            else:
+                num = rows[0][i] + rows[0][i-1] + rows[1][i]
+                count = 3
+            new_row[i] = num/count   
     else:
-        final_row = (new_row + pre_row)/2
+        for i in range(len(new_row)):
+            if i ==0:
+                num = rows[0][i] + rows[0][i+1] + rows[1][i] + rows[2][i]
+                count = 4
+            elif i < len(new_row)-1:
+                num = rows[0][i-1] + rows[0][i] + rows[0][i+1] + rows[1][i] + rows[2][i]
+                count = 5
+            else:
+                num = rows[0][i] + rows[0][i-1] + rows[1][i] + rows[2][i]
+                count = 4
+            new_row[i] = num/count   
+        
+
+    
         
     
 
+   
+    diff_array = abs(new_row - row_values)
     
-    diff_array = abs(final_row - row_values)
     diff_array = comm.allreduce(diff_array, op=MPI.SUM)
     diff = sum(diff_array)
     
-    row_values = final_row
+    
+    row_values = new_row
     
 
 
 
-averaged_matrix = comm.gather(final_row, root=0)    
+averaged_matrix = comm.gather(new_row, root=0)    
 
     
 
