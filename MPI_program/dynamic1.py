@@ -19,36 +19,28 @@ import numpy as np
 
 
 def get_prev_row(rows, rank, i, prev_rank_row):
-    if rank == 0:
-        if i == 0:
-            prev_rank_row = np.zeros(len(nest_row), dtype=float)
-        else:
-            prev_rank_row = rows[i-1]
+    if rank == 0 and i == 0:
+        prev_rank_row = np.zeros(len(nest_row), dtype=float)
+    elif i == 0:
+        prev_rank_row = prev_row
     else:
-        if i == 0:
-            prev_rank_row = prev_row
-        else:
-            prev_rank_row = rows[i-1]
+        prev_rank_row = rows[i-1]
     return prev_rank_row
             
   
 
 def get_next_row(rows, rank, i, next_rank_row):
-    if rank == size -1:
-        if i == len(rows) -1:
-            next_rank_row = np.zeros(len(prev_row), dtype=float)
-        else:
-            next_rank_row = rows[i+1]
+    if (rank == size-1) and i == (len(rows) -1):
+        next_rank_row = np.zeros(len(prev_row), dtype=float)
+    elif i == (len(rows - 1)):
+        next_rank_row = nest_row
     else:
-        if i == len(rows) -1:
-            next_rank_row = nest_row
-        else:
-            next_rank_row = rows[i+1]
+        next_rank_row = rows[i+1]
     return next_rank_row
   
 
 def get_index_count(i,j,rank, rows, array):
-    
+
     if rank == 0:
         if i == 0:
             if j == 0 or j == len(rows)-1:
@@ -118,41 +110,25 @@ if rank == 0:
     
     inital_matrix = np.reshape(inital_matrix, (size,int(m*n/size)))
     
-    
-    
-    
-    
-    
      
 else:
     inital_matrix = None
-    
+   
+
+
 # Buffers
 row_values = np.empty(int(m*n/size), dtype=float)
 nest_row = np.zeros(n, dtype=float)
 prev_row = np.zeros(n, dtype=float)
 
-averaged_matrix = np.zeros((size,int(m*n/size)), dtype=float)
-
-
-    
+ 
 # scattering among ranks
 comm.Scatter(inital_matrix, row_values, root=0)
-
-
-
-
-
-
 
 
 thres = 0.1
 diff = 2.0
 while diff > thres:
-    
-    
-
-    
 
 # communications
     if rank ==0:
@@ -167,74 +143,37 @@ while diff > thres:
 
  
 # computations
-    
-  
-        
-    
-    
     reshape = np.reshape(row_values, (int(len(row_values)/n), n))
     avgelements = np.zeros((len(reshape), len(reshape[0])), dtype=float)
     for i in range(len(reshape)):
       
         nrow = get_next_row(reshape, rank, i, nest_row)
-                
-        prow = get_prev_row(reshape, rank, i, prev_row)
-        
+        prow = get_prev_row(reshape, rank, i, prev_row)        
 
         rsumelements = reshape[i]+nrow+prow
-        
         
         zero = np.zeros(1, dtype=float)
         sumelements = rsumelements + np.concatenate((reshape[i][1:], zero), axis=None) + np.concatenate((zero, reshape[i][:-1]), axis=None)
         
         for j in range(len(sumelements)):
             indexcount = get_index_count(i,j,rank, sumelements, reshape)
-            
             avgelements[i,j] = sumelements[j]/indexcount
       
-    
-                
-                
-            
-        
-        
-        
-        
-                
-    
-        
-    
-                
-
-    
-    
     diff_array = abs(reshape - avgelements)
     diff_value = sum(sum(diff_array))
     diff = comm.allreduce(diff_value, op=MPI.SUM)
-    
     
     new_values = np.reshape(avgelements, len(row_values))
     
     row_values = new_values
     
-    
-    
-    
-    
-    
-    
-
-
+if rank == 0:
+    averaged_matrix = np.zeros((size,int(m*n/size)), dtype=float)
+else:
+    averaged_matrix = None
 
 comm.Gather(new_values, averaged_matrix, root=0)
     
-
-    
-
-
-
-
-
 # reshaping final matrix in rank =0
 if rank ==0:
     
