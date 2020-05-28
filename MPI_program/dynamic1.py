@@ -150,11 +150,10 @@ while diff > thres:
         nrow = get_next_row(reshape, rank, i, nest_row)
         prow = get_prev_row(reshape, rank, i, prev_row)        
 
-        rsumelements = reshape[i]+nrow+prow
-        
-        zero = np.zeros(1, dtype=float)
-        sumelements = rsumelements + np.concatenate((reshape[i][1:], zero), axis=None) + np.concatenate((zero, reshape[i][:-1]), axis=None)
-        
+        sumelements = reshape[i]+nrow+prow
+        sumelements[0:-1] = sumelements[0:-1]+reshape[i][1:]
+        sumelements[1:]=sumelements[1:]+reshape[i][0:-1]
+    
         for j in range(len(sumelements)):
             indexcount = get_index_count(i,j,rank, sumelements, reshape)
             avgelements[i,j] = sumelements[j]/indexcount
