@@ -62,7 +62,7 @@ up_row = np.zeros(optimum_shape[1], dtype=float)
 right_row = np.zeros(optimum_shape[0], dtype=float)
 left_row = np.zeros(optimum_shape[0], dtype=float)
 buffers = [left_row, right_row, up_row, down_row]
-#gathered = np.zeros(reshaped_row_num*reshaped_col_num)
+gathered = np.zeros((reshaped_row_num*reshaped_col_num, optimum_shape[0], optimum_shape[1]), dtype=float)
 
 # defining the neighbors
 neighbors = [rank-1, rank+1, rank-reshaped_col_num, rank+reshaped_col_num]
@@ -130,7 +130,7 @@ while diff > thres:
     
 
 # gathering converged sliced matrices from all ranks
-gathered = comm.gather(avgelements, root=0)  
+comm.Gather(avgelements, gathered, root=0)  
   
 # reshaping final matrix in rank = 0
 if rank ==0:
