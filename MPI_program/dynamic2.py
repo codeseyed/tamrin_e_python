@@ -109,10 +109,11 @@ while diff > thres:
 
 # computations
     
+  
     for i in range(len(reshape)):
 # defining upper and downer rows within each rank array     
-        urow = fun.get_up_row(reshape, rank, i, up_row, reshaped_col_num)
-        drow = fun.get_down_row(reshape, rank, i, down_row, reshaped_col_num, reshaped_row_num)
+        #urow = fun.get_up_row(reshape, rank, i, up_row, reshaped_col_num)
+        #drow = fun.get_down_row(reshape, rank, i, down_row, reshaped_col_num, reshaped_row_num)
                  
 # averaging the array assigned to each rank
         sumelements = reshape[i]+urow+drow
