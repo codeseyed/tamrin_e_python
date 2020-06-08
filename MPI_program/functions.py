@@ -30,22 +30,40 @@ def get_down_row(reshape, rank, i, down_row, reshaped_col_num, reshaped_row_num)
     return downer_row
 
 def get_right_value(sumelements, rank, j,i, right_row, reshaped_col_num):
-    if (rank+1)%reshaped_col_num !=0 and j == (len(sumelements)-1):
+    if (rank+1)%reshaped_col_num !=0 and j == (len(sumelements)-1):  # Why  j == (len(sumelements)-1)?
         righter_value = right_row[i]
     else:
         righter_value = 0
     return righter_value
 
 def get_lefter_value(sumelements, rank, j,i, left_row, reshaped_col_num):
-    if (rank)%reshaped_col_num != 0 and j == 0:
+    if (rank)%reshaped_col_num != 0 and j == 0: # Why  j == 0?
         lefter_value = left_row[i]
     else:
         lefter_value = 0
     return lefter_value
   
+# Added by Masoud
+def get_right_row(sumelements, matrix, rank, i, right_row, reshaped_col_num):
+    if rank != 0 and i == 0:
+        righter_value = right_row
+    elif rank != 0 and i != 0:
+        righter_value = matrix[i-1]
+    else:
+        righter_value = np.zeros(len(sumelements))
+    return righter_value
+
+def get_right_row(sumelements, matrix, rank, i, right_row, reshaped_col_num):
+    # TODO: implement
+  
+  
 
 def get_index_count(i,j,rank, sumelements, reshape, reshaped_col_num, reshaped_row_num):
 
+    # TODO: modify the conditions to be more clear
+    last_column = j == len(sumelements)-1
+    last_horizontal_rank = rank == reshaped_col_num -1
+    
     if rank == 0:
         if i == 0:
             if j == 0:
@@ -66,7 +84,7 @@ def get_index_count(i,j,rank, sumelements, reshape, reshaped_col_num, reshaped_r
             count = 4
         else:
             count = 5
-    elif rank == reshaped_col_num -1:
+    elif last_horizontal_rank:
         if i == 0:
             if j == len(sumelements)-1:
                 count = 3
@@ -183,13 +201,18 @@ def comm_counter(m,n, num):
         
 def forming_init_matrix(inital_matrix, optimum_shape, m, n):
         rows = []
+        rows=np.zeros(initial_matrix.shape())
         row_index = [i for i in range(0,m + optimum_shape[0], optimum_shape[0])]
         col_index = [i for i in range(0,n + optimum_shape[1], optimum_shape[1])]
+        
+        index = 0
         for i in range(len(row_index)-1):
             for j in range(len(col_index)-1):
                 for k in range(row_index[i], row_index[i+1]):
                     for l in range(col_index[j], col_index[j+1]):
-                        rows.append(inital_matrix[k][l])
+                        rows[index] = inital_matrix[k][l]
+                        index += 1
+                        #rows.append(inital_matrix[k][l])
         return rows
             
 def split_init_matrix(inital_matrix, optimum_shape, m, n, size):
@@ -200,6 +223,7 @@ def split_init_matrix(inital_matrix, optimum_shape, m, n, size):
     return rows
 
 def forming_final_matrix(gathered, inital_matrix, optimum_shape, m, n, reshaped_col_num):
+  # TODO: Final matrix like split
     inital_matrix = np.zeros((m,n), dtype=float)
     row_index = [i for i in range(0,m + optimum_shape[0], optimum_shape[0])]
     col_index = [i for i in range(0,n + optimum_shape[1], optimum_shape[1])]

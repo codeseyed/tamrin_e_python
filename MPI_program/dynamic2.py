@@ -33,11 +33,14 @@ if rank == 0:
     # count the number of communication for each construction
     count = fun.comm_counter(m,n,num)
     count = list(count)
-
-    for min_index in range(len(count)):
-        if count[min_index] == min(count):
-            optimum_shape = num[min_index]
-            break
+    
+    # Changed by Masoud
+    # TODO: we can still do better (minimum surrounding size, given a fixed area)
+    mincount = min(count)
+    minindex = count.index(mincount)
+    optimum_shape = num[minindex]
+    
+    print("optimum shape:", optimum_shape)
                     
     inital_matrix = fun.generatearray(m,n)
     print('our initial matrix was:''\n',inital_matrix,'\n')
@@ -62,7 +65,6 @@ up_row = np.zeros(optimum_shape[1], dtype=float)
 right_row = np.zeros(optimum_shape[0], dtype=float)
 left_row = np.zeros(optimum_shape[0], dtype=float)
 buffers = [left_row, right_row, up_row, down_row]
-gathered = np.zeros((reshaped_row_num*reshaped_col_num, optimum_shape[0], optimum_shape[1]), dtype=float)
 
 # defining the neighbors
 neighbors = [rank-1, rank+1, rank-reshaped_col_num, rank+reshaped_col_num]
@@ -70,39 +72,43 @@ neighbors = [rank-1, rank+1, rank-reshaped_col_num, rank+reshaped_col_num]
 # scattering among ranks
 comm.Scatter(inital_matrix, row_values, root=0)
 
-thres = 0.1
-diff = 2.0
-while diff > thres:
 
 # defining part of arrays in each rank that should be communicated and collect them in an array     
-    right_side_arr = row_values[-1::-optimum_shape[1]]
-    communicated_arrays = [np.array(row_values[0::optimum_shape[1]]), np.array(right_side_arr[::-1]) , np.array(row_values[:optimum_shape[1]]), np.array(row_values[-optimum_shape[1]:])]
+right_side_arr = row_values[-1::-optimum_shape[1]]
+communicated_arrays = [np.array(row_values[0::optimum_shape[1]]), np.array(right_side_arr[::-1]) , np.array(row_values[:optimum_shape[1]]), np.array(row_values[-optimum_shape[1]:])]
 
 # zipping each part of communicated arrays with buffers and assocated neighbors   
-    ziped_array = zip(neighbors, buffers, communicated_arrays)
+ziped_array = zip(neighbors, buffers, communicated_arrays)
 
 # removing the wrong neighbors and concomitant zipped array and buffer 
-    ziped_array = [nr for nr in ziped_array if nr[0] >= 0 and nr[0] < reshaped_row_num*reshaped_col_num]
+ziped_array = [nr for nr in ziped_array if nr[0] >= 0 and nr[0] < reshaped_row_num*reshaped_col_num]
 
 # adding the condition when we just have two ranks and/or columns are not splitted   
-    if reshaped_col_num == 1:
-        ziped_array.remove(ziped_array[0])
+if reshaped_col_num == 1:
+    ziped_array.remove(ziped_array[0])
 
 # removing the wrong neighbors and concomitant zipped array and buffer        
-    elif rank % reshaped_col_num == 0 and rank != 0:
-        ziped_array.remove(ziped_array[0])
+elif rank % reshaped_col_num == 0 and rank != 0:
+    ziped_array.remove(ziped_array[0])
+
+elif (rank+1) % reshaped_col_num ==0 and rank != reshaped_row_num*reshaped_col_num -1:
+    ziped_array.remove(ziped_array[1])
     
-    elif (rank+1) % reshaped_col_num ==0 and rank != reshaped_row_num*reshaped_col_num -1:
-        ziped_array.remove(ziped_array[1])
+reshape = np.reshape(row_values, optimum_shape)
+avgelements = np.zeros((len(reshape), len(reshape[0])), dtype=float)
+
+        
+thres = 0.4
+diff = 2.0
+while diff > thres:
     
 # communications    
+    # TODO: error here if ranks = 5
     for i,j,k in ziped_array:
         comm.Sendrecv(k, dest=i, sendtag=rank, recvbuf=j, source=i, recvtag=i)
- 
+
 # computations
-    reshape = np.reshape(row_values, optimum_shape)
     
-    avgelements = np.zeros((len(reshape), len(reshape[0])), dtype=float)
     for i in range(len(reshape)):
 # defining upper and downer rows within each rank array     
         urow = fun.get_up_row(reshape, rank, i, up_row, reshaped_col_num)
@@ -112,11 +118,15 @@ while diff > thres:
         sumelements = reshape[i]+urow+drow
         sumelements[0:-1] = sumelements[0:-1]+reshape[i][1:]
         sumelements[1:]=sumelements[1:]+reshape[i][0:-1]
+        # Modified by Masoud, TODO:
+        sumelements += fun.get_right_row(sumelements, reshape, rank, i, right_row, reshaped_col_num)
+        sumelements += fun.get_left_row(sumelements, reshape, rank, i, left_row, reshaped_col_num)
+
     
         for j in range(len(sumelements)):
-            rval = fun.get_right_value(sumelements, rank, j,i, right_row, reshaped_col_num)
-            lval = fun.get_lefter_value(sumelements, rank, j, i, left_row, reshaped_col_num)
-            sumelements[j] = sumelements[j] + rval + lval
+            #rval = fun.get_right_value(sumelements, rank, j,i, right_row, reshaped_col_num)
+            #lval = fun.get_lefter_value(sumelements, rank, j, i, left_row, reshaped_col_num)
+            #sumelements[j] = sumelements[j] + rval + lval
             indexcount = fun.get_index_count(i,j,rank, sumelements, reshape, reshaped_col_num, reshaped_row_num)
             avgelements[i,j] = sumelements[j]/indexcount
 
@@ -128,8 +138,12 @@ while diff > thres:
     new_values = np.reshape(avgelements, len(row_values))
     row_values = new_values
     
-
+# Changed by Masoud
 # gathering converged sliced matrices from all ranks
+if rank == 0:
+    gathered = np.zeros((reshaped_row_num*reshaped_col_num, optimum_shape[0], optimum_shape[1]), dtype=float)
+else:
+    gathered = None
 comm.Gather(avgelements, gathered, root=0)  
   
 # reshaping final matrix in rank = 0
